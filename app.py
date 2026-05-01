@@ -1,14 +1,14 @@
-from flask import Flask, render_template, request, session
+from flask import Flask, render_template, request, session, redirect, url_for
 import random
 import os
 
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-# 📁 Base directory (fix for file paths)
+# 📁 Base path (for files)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# 🔹 Load words from file
+# 🔹 Load words
 def load_words():
     words = []
     with open(os.path.join(BASE_DIR, "words.txt"), "r") as file:
@@ -20,7 +20,7 @@ def load_words():
 
 words = load_words()
 
-# 🔹 Start new game
+# 🔹 Start game
 def start_game():
     word = random.choice(words)
     session["word"] = word
@@ -34,7 +34,7 @@ def save_score(score):
     with open(os.path.join(BASE_DIR, "scores.txt"), "a") as f:
         f.write(str(score) + "\n")
 
-# 🔹 Get top scores
+# 🔹 Get leaderboard
 def get_top_scores():
     try:
         with open(os.path.join(BASE_DIR, "scores.txt"), "r") as f:
@@ -44,7 +44,7 @@ def get_top_scores():
     except:
         return []
 
-# 🔹 Main route
+# 🔹 MAIN ROUTE (VERY IMPORTANT)
 @app.route("/", methods=["GET", "POST"])
 def index():
     if "word" not in session:
@@ -55,9 +55,12 @@ def index():
     if request.method == "POST":
         guess = request.form.get("guess", "").lower()
 
+        # 🔁 Restart
         if guess == "restart":
             start_game()
+            return redirect(url_for("index"))
 
+        # 💡 Hint
         elif guess == "hint":
             hidden = [i for i in range(len(session["word"])) if session["guessed"][i] == "_"]
             if hidden:
@@ -71,9 +74,11 @@ def index():
                 session["score"] -= 2
                 message = f"Hint: {letter}"
 
+        # 🔁 Already guessed
         elif guess in session["used"]:
             message = "Already guessed!"
 
+        # ✅ Valid input
         elif len(guess) == 1 and guess.isalpha():
             session["used"].append(guess)
 
@@ -92,11 +97,11 @@ def index():
         else:
             message = "Invalid input"
 
-    # 🎯 Check win/lose
+    # 🎯 Win/Lose
     win = "_" not in session["guessed"]
     lose = session["attempts"] == 0
 
-    # 🏆 Save score when game ends
+    # 🏆 Save score
     if win or lose:
         save_score(session["score"])
 
