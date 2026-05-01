@@ -9,6 +9,7 @@
             color: white;
             text-align: center;
             padding: 30px;
+            transition: opacity 0.3s ease;
         }
 
         .container {
@@ -151,6 +152,18 @@
         </div>
     </form>
 </div>
+
+<!-- ✅ Added script (correct placement) -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const form = document.querySelector("form");
+    if (form) {
+        form.addEventListener("submit", function() {
+            document.body.style.opacity = "0.5";
+        });
+    }
+});
+</script>
 
 </body>
 </html>
