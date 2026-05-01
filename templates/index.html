@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Word Guess Game</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .container {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            width: 350px;
+            margin: auto;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            animation: fadeIn 0.8s ease-in-out;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .word span {
+            display: inline-block;
+            font-size: 32px;
+            margin: 0 5px;
+            animation: pop 0.4s ease;
+        }
+
+        input {
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            text-align: center;
+            font-size: 16px;
+            width: 80%;
+        }
+
+        .buttons {
+            margin-top: 15px;
+        }
+
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:active {
+            transform: scale(0.9);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        .guess { background: #4CAF50; color: white; }
+        .hint { background: #2196F3; color: white; }
+        .restart { background: #ff9800; color: white; }
+
+        .info {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .message {
+            margin-top: 10px;
+            font-weight: bold;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .win {
+            color: #00ffcc;
+            animation: blink 1s infinite;
+        }
+
+        .lose {
+            color: #ff4d4d;
+            animation: shake 0.5s;
+        }
+
+        /* Animations */
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pop {
+            from { transform: scale(0.5); }
+            to { transform: scale(1); }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🎮 Word Guess</h1>
+
+    <div class="word">
+        {% for letter in word.split() %}
+            <span>{{ letter }}</span>
+        {% endfor %}
+    </div>
+
+    <div class="info">
+        Attempts: {{ attempts }} | Score: {{ score }}
+        <br>
+        Used: {{ used }}
+    </div>
+
+    <p class="message">{{ message }}</p>
+
+    {% if win %}
+        <h2 class="win">🎉 You Win!</h2>
+    {% elif lose %}
+        <h2 class="lose">💀 You Lose! Word: {{ real_word }}</h2>
+    {% endif %}
+
+    <form method="POST">
+        <input type="text" name="guess" placeholder="Enter letter">
+
+        <div class="buttons">
+            <button class="guess" type="submit">Guess</button>
+            <button class="hint" type="submit" name="guess" value="hint">Hint</button>
+            <button class="restart" type="submit" name="guess" value="restart">Restart</button>
+        </div>
+    </form>
+</div>
+
+</body>
+</html>

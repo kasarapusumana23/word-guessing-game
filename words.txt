@@ -1,0 +1,9 @@
+easy:cat
+easy:dog
+easy:pen
+medium:apple
+medium:tiger
+medium:chair
+hard:python
+hard:elephant
+hard:guitar
