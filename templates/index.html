@@ -1,169 +1,85 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Word Guess Game</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            text-align: center;
-            padding: 30px;
-            transition: opacity 0.3s ease;
-        }
+@app.route("/", methods=["GET", "POST"])
+def index():
+    if "word" not in session:
+        start_game()
 
-        .container {
-            background: rgba(255,255,255,0.1);
-            padding: 30px;
-            border-radius: 15px;
-            width: 350px;
-            margin: auto;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-            animation: fadeIn 0.8s ease-in-out;
-        }
+    message = ""
 
-        h1 {
-            margin-bottom: 20px;
-        }
+    if request.method == "POST":
+        guess = request.form.get("guess", "").lower()
 
-        .word span {
-            display: inline-block;
-            font-size: 32px;
-            margin: 0 5px;
-            animation: pop 0.4s ease;
-        }
+        # 🔁 RESTART FIX
+        if guess == "restart":
+            start_game()
+            return render_template(
+                "index.html",
+                word=" ".join(session["guessed"]),
+                attempts=session["attempts"],
+                score=session["score"],
+                used=session["used"],
+                message="Game restarted!",
+                win=False,
+                lose=False,
+                real_word=session["word"],
+                top_scores=get_top_scores()
+            )
 
-        input {
-            padding: 10px;
-            border-radius: 8px;
-            border: none;
-            text-align: center;
-            font-size: 16px;
-            width: 80%;
-        }
+        # 💡 HINT
+        elif guess == "hint":
+            hidden = [i for i in range(len(session["word"])) if session["guessed"][i] == "_"]
+            if hidden:
+                idx = random.choice(hidden)
+                letter = session["word"][idx]
 
-        .buttons {
-            margin-top: 15px;
-        }
+                for i in range(len(session["word"])):
+                    if session["word"][i] == letter:
+                        session["guessed"][i] = letter
 
-        button {
-            padding: 10px 15px;
-            margin: 5px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
+                session["score"] -= 2
+                message = f"Hint: {letter}"
+            else:
+                message = "No letters left!"
 
-        button:active {
-            transform: scale(0.9);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
+        # 🔁 ALREADY USED
+        elif guess in session["used"]:
+            message = "Already guessed!"
 
-        button:hover {
-            transform: scale(1.05);
-        }
+        # ✅ VALID INPUT
+        elif len(guess) == 1 and guess.isalpha():
+            session["used"].append(guess)
 
-        .guess { background: #4CAF50; color: white; }
-        .hint { background: #2196F3; color: white; }
-        .restart { background: #ff9800; color: white; }
+            if guess in session["word"]:
+                for i in range(len(session["word"])):
+                    if session["word"][i] == guess:
+                        session["guessed"][i] = guess
 
-        .info {
-            margin-top: 15px;
-            font-size: 14px;
-        }
+                session["score"] += 2
+                message = "Correct!"
+            else:
+                session["attempts"] -= 1
+                session["score"] -= 1
+                message = "Wrong!"
 
-        .message {
-            margin-top: 10px;
-            font-weight: bold;
-            animation: fadeIn 0.5s ease;
-        }
+        else:
+            message = "Invalid input"
 
-        .win {
-            color: #00ffcc;
-            animation: blink 1s infinite;
-        }
+    # 🎯 WIN / LOSE CHECK
+    win = "_" not in session["guessed"]
+    lose = session["attempts"] == 0
 
-        .lose {
-            color: #ff4d4d;
-            animation: shake 0.5s;
-        }
+    # 🏆 SAVE SCORE ON END
+    if win or lose:
+        save_score(session["score"])
 
-        /* Animations */
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes pop {
-            from { transform: scale(0.5); }
-            to { transform: scale(1); }
-        }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-
-        @keyframes shake {
-            0% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            50% { transform: translateX(5px); }
-            75% { transform: translateX(-5px); }
-            100% { transform: translateX(0); }
-        }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <h1>🎮 Word Guess</h1>
-
-    <div class="word">
-        {% for letter in word.split() %}
-            <span>{{ letter }}</span>
-        {% endfor %}
-    </div>
-
-    <div class="info">
-        Attempts: {{ attempts }} | Score: {{ score }}
-        <br>
-        Used: {{ used }}
-    </div>
-
-    <p class="message">{{ message }}</p>
-
-    {% if win %}
-        <h2 class="win">🎉 You Win!</h2>
-    {% elif lose %}
-        <h2 class="lose">💀 You Lose! Word: {{ real_word }}</h2>
-    {% endif %}
-
-    <form method="POST">
-        <input type="text" name="guess" placeholder="Enter letter">
-
-        <div class="buttons">
-            <button class="guess" type="submit">Guess</button>
-            <button class="hint" type="submit" name="guess" value="hint">Hint</button>
-            <button class="restart" type="submit" name="guess" value="restart">Restart</button>
-        </div>
-    </form>
-</div>
-
-<!-- ✅ Added script (correct placement) -->
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    const form = document.querySelector("form");
-    if (form) {
-        form.addEventListener("submit", function() {
-            document.body.style.opacity = "0.5";
-        });
-    }
-});
-</script>
-
-</body>
-</html>
+    return render_template(
+        "index.html",
+        word=" ".join(session["guessed"]),
+        attempts=session["attempts"],
+        score=session["score"],
+        used=session["used"],
+        message=message,
+        win=win,
+        lose=lose,
+        real_word=session["word"],
+        top_scores=get_top_scores()
+    )
