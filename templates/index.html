@@ -8,23 +8,10 @@ def index():
     if request.method == "POST":
         guess = request.form.get("guess", "").lower()
 
-        # 🔁 RESTART FIX
         if guess == "restart":
             start_game()
-            return render_template(
-                "index.html",
-                word=" ".join(session["guessed"]),
-                attempts=session["attempts"],
-                score=session["score"],
-                used=session["used"],
-                message="Game restarted!",
-                win=False,
-                lose=False,
-                real_word=session["word"],
-                top_scores=get_top_scores()
-            )
+            return redirect(url_for("index"))
 
-        # 💡 HINT
         elif guess == "hint":
             hidden = [i for i in range(len(session["word"])) if session["guessed"][i] == "_"]
             if hidden:
@@ -37,14 +24,10 @@ def index():
 
                 session["score"] -= 2
                 message = f"Hint: {letter}"
-            else:
-                message = "No letters left!"
 
-        # 🔁 ALREADY USED
         elif guess in session["used"]:
             message = "Already guessed!"
 
-        # ✅ VALID INPUT
         elif len(guess) == 1 and guess.isalpha():
             session["used"].append(guess)
 
@@ -63,11 +46,9 @@ def index():
         else:
             message = "Invalid input"
 
-    # 🎯 WIN / LOSE CHECK
     win = "_" not in session["guessed"]
     lose = session["attempts"] == 0
 
-    # 🏆 SAVE SCORE ON END
     if win or lose:
         save_score(session["score"])
 
